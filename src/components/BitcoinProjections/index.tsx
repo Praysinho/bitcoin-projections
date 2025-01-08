@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { DollarSign, Percent } from "lucide-react";
@@ -89,22 +89,40 @@ const BitcoinProjections = () => {
   const [selectedMetric, setSelectedMetric] = useState<'price' | 'probability'>('price');
   const [currentPrice, setCurrentPrice] = useState(97027);
   const [ath, setAth] = useState(108200);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  const fetchBitcoinPrice = async () => {
+  const fetchBitcoinPrice = useCallback(async () => {
     try {
-      const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+      const response = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
       const data = await response.json();
-      setCurrentPrice(Math.round(data.bitcoin.usd));
+      const newPrice = Math.round(Number(data.price));
+      setCurrentPrice(newPrice);
+      setLastUpdate(new Date());
+      
+      // Actualizar ATH si el nuevo precio es mayor
+      if (newPrice > ath) {
+        setAth(newPrice);
+        localStorage.setItem('btc_ath', newPrice.toString());
+      }
     } catch (error) {
       console.error('Error fetching Bitcoin price:', error);
     }
-  };
-
+  }, [ath]);
+  
   useEffect(() => {
+    // Cargar ATH guardado del localStorage
+    const savedAth = localStorage.getItem('btc_ath');
+    if (savedAth) {
+      setAth(Number(savedAth));
+    }
+  
+    // Fetch inicial
     fetchBitcoinPrice();
-    const interval = setInterval(fetchBitcoinPrice, 60000);
+  
+    // Actualizar cada 15 segundos
+    const interval = setInterval(fetchBitcoinPrice, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchBitcoinPrice]);
   
   const scenarios = useMemo<Scenario[]>(() => [
     {
