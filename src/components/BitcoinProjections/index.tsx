@@ -90,6 +90,17 @@ const BitcoinProjections = () => {
   const [currentPrice, setCurrentPrice] = useState(97027);
   const [ath, setAth] = useState(108200);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [isMobile, setIsMobile] = useState(false);
+
+  const checkIsMobile = useCallback(() => {
+    setIsMobile(window.innerWidth < 768);
+  }, []);
+
+  useEffect(() => {
+    checkIsMobile();
+    window.addEventListener('resize', checkIsMobile);
+    return () => window.removeEventListener('resize', checkIsMobile);
+  }, [checkIsMobile]);
 
   const fetchBitcoinPrice = useCallback(async () => {
     try {
@@ -108,18 +119,15 @@ const BitcoinProjections = () => {
       console.error('Error fetching Bitcoin price:', error);
     }
   }, [ath]);
-  
+
   useEffect(() => {
-    // Cargar ATH guardado del localStorage
+    // Cargar ATH guardado
     const savedAth = localStorage.getItem('btc_ath');
     if (savedAth) {
       setAth(Number(savedAth));
     }
-  
-    // Fetch inicial
+
     fetchBitcoinPrice();
-  
-    // Actualizar cada 15 segundos
     const interval = setInterval(fetchBitcoinPrice, 15000);
     return () => clearInterval(interval);
   }, [fetchBitcoinPrice]);
@@ -173,7 +181,7 @@ const BitcoinProjections = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900 p-2 sm:p-4 md:p-6">
-      <Card className="bg-slate-900/90 backdrop-blur-sm border-none text-white shadow-lg">
+      <Card className="bg-slate-900/90 backdrop-blur-sm border-none text-white shadow-lg relative">
         <CardHeader className="border-b border-slate-700/30 space-y-4 sm:space-y-6 pb-4 sm:pb-6">
           <CardTitle className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent text-center pb-2 sm:pb-4">
             Proyecciones de Bitcoin Post-Halving
@@ -183,7 +191,7 @@ const BitcoinProjections = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-6 sm:space-y-8 py-4 sm:py-6">
+          <div className="space-y-4 sm:space-y-6 py-2 sm:py-4">
             <div className="flex flex-wrap gap-3 sm:gap-4 justify-center">
               {[
                 {
@@ -209,19 +217,24 @@ const BitcoinProjections = () => {
                   `}
                   onClick={() => setSelectedMetric(metric)}
                 >
-                  <Icon size={18} />
+                  <Icon size={isMobile ? 16 : 18} />
                   <span>{label}</span>
                 </button>
               ))}
             </div>
             
-            <div className="h-[400px] sm:h-[500px] lg:h-[550px] bg-slate-900/90 backdrop-blur-sm rounded-xl p-2 sm:p-4 relative">
+            <div className="h-[450px] sm:h-[500px] lg:h-[550px] bg-slate-900/90 backdrop-blur-sm rounded-xl p-2 sm:p-4 relative">
               <ResponsiveContainer width="100%" height="100%" minHeight={400}>
                 <BarChart
                   data={scenarios}
-                  margin={{ top: 40, right: 20, left: 40, bottom: 20 }}
-                  barGap={12}
-                  barSize={70}
+                  margin={{ 
+                    top: 40, 
+                    right: isMobile ? 10 : 20, 
+                    left: isMobile ? 30 : 40,
+                    bottom: isMobile ? 40 : 20
+                  }}
+                  barGap={isMobile ? 8 : 12}
+                  barSize={isMobile ? 40 : 70}
                 >
                   <defs>
                     {scenarios.map((entry, index) => (
@@ -250,17 +263,17 @@ const BitcoinProjections = () => {
                   <XAxis 
                     dataKey="name" 
                     stroke="#e2e8f0"
-                    tick={{ fill: '#e2e8f0', fontSize: 12 }}
+                    tick={{ fill: '#e2e8f0', fontSize: isMobile ? 10 : 12 }}
                   />
                   <YAxis 
                     stroke="#e2e8f0"
-                    width={60}
+                    width={isMobile ? 50 : 60}
                     label={{ 
                       value: selectedMetric === 'price' ? 'Precio USD' : 'Probabilidad %',
                       angle: -90,
                       position: 'insideLeft',
                       offset: 10,
-                      style: { fill: '#e2e8f0', fontSize: 12 }
+                      style: { fill: '#e2e8f0', fontSize: isMobile ? 10 : 12 }
                     }}
                     tickFormatter={(value) => selectedMetric === 'price' 
                       ? `${Math.round(value / 1000)}K`
@@ -274,7 +287,7 @@ const BitcoinProjections = () => {
                         ? Math.ceil(scenarios[scenarios.length - 1].price * 1.1 / 1000) * 1000
                         : 50
                     ]}
-                    tick={{ fill: '#e2e8f0', fontSize: 12 }}
+                    tick={{ fill: '#e2e8f0', fontSize: isMobile ? 10 : 12 }}
                   />
                   <Tooltip 
                     content={(props) => <CustomTooltip {...props} selectedMetric={selectedMetric} />}
@@ -282,7 +295,7 @@ const BitcoinProjections = () => {
                   <Legend 
                     content={() => (
                       <div className="flex justify-center items-center mt-2">
-                        <span className="text-white text-sm sm:text-lg">
+                        <span className="text-white text-xs sm:text-sm lg:text-lg">
                           {selectedMetric === 'price' ? 'Precio Objetivo USD' : 'Probabilidad %'}
                         </span>
                       </div>
@@ -298,10 +311,10 @@ const BitcoinProjections = () => {
                       strokeDasharray="3 3"
                       label={{ 
                         value: `Precio Actual: ${formatCurrency(currentPrice)}`,
-                        position: 'insideBottomLeft',
+                        position: 'insideTopLeft',
                         fill: '#22c55e',
-                        fontSize: 12,
-                        dy: -15
+                        fontSize: isMobile ? 10 : 12,
+                        dy: 15
                       }}
                       isFront={true}
                     />
@@ -322,7 +335,7 @@ const BitcoinProjections = () => {
               </ResponsiveContainer>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {scenarios.map((scenario) => (
                 <Card 
                   key={scenario.name}
@@ -332,7 +345,7 @@ const BitcoinProjections = () => {
                     background: `linear-gradient(to bottom, ${scenario.gradientStart}, ${scenario.gradientEnd})`
                   }} />
                   <div className="relative p-4 sm:p-8 space-y-4 sm:space-y-6">
-                    <div className="flex items-center justify-between border-b border-slate-700/30 pb-4">
+                  <div className="flex items-center justify-between border-b border-slate-700/30 pb-4">
                       <h3 className="text-lg sm:text-xl font-semibold text-white">
                         {scenario.name}
                       </h3>
@@ -359,6 +372,11 @@ const BitcoinProjections = () => {
             </div>
           </div>
         </CardContent>
+        
+        {/* Marca de agua */}
+        <div className="absolute bottom-2 right-4 text-slate-500 text-xs sm:text-sm opacity-50">
+          Created by Pray | v0.1.5
+        </div>
       </Card>
     </div>
   );
