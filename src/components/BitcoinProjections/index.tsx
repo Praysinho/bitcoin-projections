@@ -305,20 +305,21 @@ const BitcoinProjections = () => {
                   />
                   {selectedMetric === 'price' && (
                     <ReferenceLine
-                      y={currentPrice}
-                      stroke="#22c55e"
-                      strokeWidth={2}
-                      strokeDasharray="3 3"
-                      label={{ 
+                        y={currentPrice}
+                        stroke="#22c55e"
+                        strokeWidth={2}
+                        strokeDasharray="3 3"
+                        label={{ 
                         value: `Precio Actual: ${formatCurrency(currentPrice)}`,
-                        position: 'insideTopLeft',
+                        position: 'top',  // Cambiado a 'top'
                         fill: '#22c55e',
                         fontSize: isMobile ? 10 : 12,
-                        dy: 15
-                      }}
-                      isFront={true}
+                        offset: 10,
+                        className: "font-mono"
+                        }}
+                        isFront={true}
                     />
-                  )}
+                    )}
                   <Bar
                     dataKey={selectedMetric}
                     name={selectedMetric === 'price' ? 'Precio Objetivo USD' : 'Probabilidad %'}
